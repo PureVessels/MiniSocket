@@ -227,7 +227,7 @@ Packet sending is synchronized per connection to prevent concurrent writes from 
 
 * Java 21+
 * TCP networking support
-* [MiniBase](https://github.com/PureVessels/MiniBase)
+* [MiniBase](https://github.com/PureVessels/MiniBase) (If you are going to use a database)
 
 ## Design Goals
 
