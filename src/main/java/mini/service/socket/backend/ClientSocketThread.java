@@ -16,7 +16,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Set;
 
-public final class BackendConnectionThread extends Thread {
+public final class ClientSocketThread extends Thread {
 
     private static final Set<String> ALLOWED_IPS = Set.of(
             "127.0.0.1",
@@ -33,7 +33,7 @@ public final class BackendConnectionThread extends Thread {
 
     private PrintWriter writer;
 
-    BackendConnectionThread(Socket socket, String token, MainBackend backendData) {
+    ClientSocketThread(Socket socket, String token, MainBackend backendData) {
         this.socket = socket;
         this.token = token;
 
@@ -51,7 +51,7 @@ public final class BackendConnectionThread extends Thread {
         try {
             String ip = socket.getInetAddress().getHostAddress();
 
-            if (!ALLOWED_IPS.contains(ip) && !MiniSocket.getInstance().isWhiteList(ip)) {
+            if (!ALLOWED_IPS.contains(ip) && !MiniSocket.getInstance().isWhitelisted(ip)) {
                 MiniSocket.getLogger().severe("Invalid IP address: " + ip + " Remote Adress: " + remoteAddress);
                 MiniSocket.getInstance().addBan(ip);
                 socket.close();

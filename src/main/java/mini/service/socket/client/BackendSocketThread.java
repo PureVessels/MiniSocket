@@ -9,11 +9,11 @@ import mini.service.socket.thrown.packet.PacketException;
 
 import java.io.IOException;
 
-public final class ClientConnectionThread extends Thread {
+public final class BackendSocketThread extends Thread {
 
     private final SocketClient client;
 
-    ClientConnectionThread(SocketClient socketClient) {
+    BackendSocketThread(SocketClient socketClient) {
         this.client = socketClient;
     }
 

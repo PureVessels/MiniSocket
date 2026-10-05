@@ -1,12 +1,13 @@
-package lb.runoriacraft.socket.database;
+package mini.service.socket.database;
 
-import lb.runoriacraft.socket.RunoriaSocket;
-import lb.runoriacraft.socket.database.manager.DatabaseManager;
+
+import mini.service.socket.MiniSocket;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class WhiteListDB extends DatabaseManager {
 
@@ -14,7 +15,7 @@ public class WhiteListDB extends DatabaseManager {
         super("socket_whitelist", List.of("ip"));
     }
 
-    public Set<String> getWhiteList() {
+    public CompletableFuture<Set<String>> getWhiteList() {
         return query(
                 "SELECT ip FROM socket_whitelist",
                 rs -> {
@@ -38,7 +39,7 @@ public class WhiteListDB extends DatabaseManager {
     }
 
     public static void createTable(){
-        RunoriaSocket.getDatabaseService().createTable("socket_whitelist",
+        MiniSocket.getInstance().getDatabase().createTable("socket_whitelist",
                 """
                         CREATE TABLE IF NOT EXISTS socket_whitelist (
                             ip CHAR(36) NOT NULL,

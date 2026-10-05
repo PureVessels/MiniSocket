@@ -1,18 +1,18 @@
-package lb.runoriacraft.socket.database.manager;
+package mini.service.socket.database;
 
-import lb.runoriacraft.database.manager.CustomDatabaseManager;
-import lb.runoriacraft.socket.RunoriaSocket;
+
+import mini.service.database.api.utils.CustomDatabaseManager;
+import mini.service.socket.MiniSocket;
 
 import java.sql.Connection;
 import java.util.List;
 
 public abstract class DatabaseManager extends CustomDatabaseManager {
 
-
     public DatabaseManager(String tableName, List<String> tableColumns) {
-        super(tableName, tableColumns);
+        super(MiniSocket.getInstance().getDatabase(), tableName, tableColumns);
     }
 
-    protected final Connection getConnection(){ return RunoriaSocket.getDatabaseService().getConnection(); }
+    protected final Connection getConnection(){ return MiniSocket.getInstance().getDatabase().getConnection(); }
 
 }

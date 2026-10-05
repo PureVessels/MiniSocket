@@ -1,35 +1,36 @@
-package lb.runoriacraft.socket.packet;
+package mini.service.socket.packet;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import lb.runoriacraft.socket.thrown.PacketDataException;
+import mini.service.socket.thrown.packet.PacketException;
+
 
 import java.net.Socket;
 
 public abstract class PacketHandler {
 
-    private final String channel;
+    private final String post;
     private final Reader reader;
     private final boolean requireSocket;
 
-    protected PacketHandler(String channel, Reader reader){
-        this(channel, reader, false);
+    protected PacketHandler(String post, Reader reader){
+        this(post, reader, false);
     }
 
-    protected PacketHandler(String channel, Reader reader, boolean requireSocket) {
-        this.channel = channel;
+    protected PacketHandler(String post, Reader reader, boolean requireSocket) {
+        this.post = post;
         this.reader = reader;
         this.requireSocket = requireSocket;
     }
 
-    public final String channel() { return channel; }
+    public final String post() { return post; }
 
     public void execute(JsonObject body){ }
     public void execute(JsonObject body, Socket socket){ }
 
     protected final JsonElement require(String key, JsonObject body) {
         JsonElement element = body.get(key);
-        if (element == null || element.isJsonNull()) throw new PacketDataException("Body missing key: " + key);
+        if (element == null || element.isJsonNull()) throw new PacketException("Body missing key: " + key, PacketException.Function.READER);
 
         return element;
     }
@@ -59,7 +60,7 @@ public abstract class PacketHandler {
 
 
     public enum Reader {
-        MAIN,
-        SERVER
+        BACKEND,
+        CLIENT
     }
 }
