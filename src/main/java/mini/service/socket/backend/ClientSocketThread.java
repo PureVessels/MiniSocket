@@ -14,7 +14,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.security.MessageDigest;
 import java.util.Set;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class ClientSocketThread extends Thread {
 
@@ -27,7 +30,6 @@ public final class ClientSocketThread extends Thread {
     private final MainBackend backendData;
 
     private final String token;
-    private final boolean tokenDefault;
 
     private boolean saved;
 
@@ -37,7 +39,6 @@ public final class ClientSocketThread extends Thread {
         this.socket = socket;
         this.token = token;
 
-        this.tokenDefault = MiniSocket.isTokenDefault(token);
         this.backendData = backendData;
         this.saved = false;
     }
@@ -65,15 +66,15 @@ public final class ClientSocketThread extends Thread {
                 try {
                     JsonObject json = MiniSocket.getGson().fromJson(line, JsonObject.class);
 
-                    if (!json.has("token") || !json.has("server") || !json.has("packet")) {
+                    if (!json.has("token") || !json.has("client") || !json.has("packet")) {
                         throw new PacketException("Missing required fields.", PacketException.Function.CONTROL);
                     }
 
                     String receivedToken = json.get("token").getAsString();
-                    String serverName = json.get("server").getAsString();
+                    String serverName = json.get("client").getAsString();
                     JsonObject jsonPacket = json.getAsJsonObject("packet");
 
-                    if (!tokenDefault && !token.equals(receivedToken)) {
+                    if (!MessageDigest.isEqual(token.getBytes(UTF_8), receivedToken.getBytes(UTF_8))) {
                         MiniSocket.getLogger().warning("Invalid token from " + remoteAddress);
                         if (MiniSocket.isTokenDefault(receivedToken)) MiniSocket.getLogger().warning("token is defaulted.");
                         return;
@@ -81,7 +82,7 @@ public final class ClientSocketThread extends Thread {
 
                     if (!saved){
                         writer = new PrintWriter(socket.getOutputStream(), true);
-                        backendData.saveSocket(socket, this);
+                        backendData.addConnection(socket, this);
                         saved = true;
                     }
 
@@ -94,9 +95,7 @@ public final class ClientSocketThread extends Thread {
                             continue;
                         }
 
-                        if (!serverName.equalsIgnoreCase("discord")){
-                            if (handler.ignoreServer(serverName)) continue;
-                        }
+                        if (handler.ignoreClient(serverName)) continue;
 
                         JsonObject packetBody = packet.body();
 
@@ -117,7 +116,7 @@ public final class ClientSocketThread extends Thread {
             MiniSocket.getLogger().severe("Packet Control error: "+ ex.getMessage());
             ex.printStackTrace();
         } finally {
-            if (saved) backendData.removeSocket(socket);
+            if (saved) backendData.removeConnection(socket);
 
             try { socket.close();
             } catch (IOException ignored) {}

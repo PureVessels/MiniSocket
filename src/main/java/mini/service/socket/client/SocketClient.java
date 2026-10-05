@@ -17,9 +17,9 @@ public final class SocketClient {
     private final int port;
 
     private final String token;
-    private final String clientName;
+    private String clientName;
 
-    private final Consumer<SocketClient> onConnect;
+    private Consumer<SocketClient> onConnect;
 
     private volatile Socket socket;
     private volatile BufferedReader reader;
@@ -30,13 +30,15 @@ public final class SocketClient {
         this.port = port;
 
         this.token = token;
-        if (token.isEmpty() || token.equalsIgnoreCase("token")) {
+        if (MiniSocket.isTokenDefault(token)) {
             MiniSocket.getLogger().warning("Token is default.");
+            return;
         }
 
         this.clientName = clientName;
-        if (clientName.equalsIgnoreCase("server")) {
-            MiniSocket.getLogger().warning("Server name is default.");
+        if (clientName.equalsIgnoreCase("server") || clientName.equalsIgnoreCase("client")) {
+            MiniSocket.getLogger().warning("Client name is default.");
+            return;
         }
 
         this.onConnect = onConnect;
@@ -47,12 +49,7 @@ public final class SocketClient {
         new ConnectionBackendThread(this).start();
     }
 
-    public SocketClient(String host, int port, String token, Consumer<SocketClient> onConnect) { this("server", host, port, token, onConnect); }
-    public SocketClient(String host, int port, Consumer<SocketClient> onConnect) { this(host, port, "token", onConnect); }
-    public SocketClient(String host, int port) { this(host, port, null); }
-
-    public SocketClient(String clientName, String host, int port, String token){ this(clientName, host, port, token, null); }
-    public SocketClient(String clientName, String host, int port){ this(clientName, host, port, "token"); }
+    public SocketClient(String clientName, String host, int port, String token) { this(clientName, host, port, token, null); }
 
 
     public String getHost(){ return host; }

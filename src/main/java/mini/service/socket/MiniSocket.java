@@ -35,9 +35,9 @@ public final class MiniSocket {
     private ServerSocket serverSocket;
 
     private final String token;
-    private final MainBackend backend;
+    private MainBackend backend;
 
-    private final boolean hasDatabase;
+    private boolean hasDatabase;
     private DatabaseService database;
 
     private BanListDB banListDB;
@@ -57,7 +57,11 @@ public final class MiniSocket {
         }
 
         this.token = Objects.requireNonNull(token);
-        if (token.equalsIgnoreCase("token")) getLogger().warning("token is defaulted.");
+        if (isTokenDefault(token)){
+            getLogger().warning("token is defaulted.");
+            return;
+        }
+
         if (token.isEmpty()) getLogger().warning("token is empty.");
 
         this.backend = backend;
@@ -68,13 +72,13 @@ public final class MiniSocket {
                 Class.forName("mini.service.database.DataBase", false, Thread.currentThread().getContextClassLoader());
                 database = databaseService;
 
+                createTables();
+
                 banListDB = new BanListDB();
                 banListDB.getBanList().thenAccept(this.BAN_LIST::addAll);
 
                 whiteListDB = new WhiteListDB();
                 whiteListDB.getWhiteList().thenAccept(this.WHITE_LIST::addAll);
-
-                createTables();
             } catch (ClassNotFoundException e) {
                 getLogger().severe("Database Service not found!");
             }

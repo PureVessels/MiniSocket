@@ -54,7 +54,7 @@ public abstract class PacketHandler {
     public final Reader reader() { return reader; }
     public final boolean requireSocket() { return requireSocket; }
 
-    public boolean ignoreServer(String serverName){
+    public boolean ignoreClient(String clientName){
         return false;
     }
 

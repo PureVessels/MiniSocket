@@ -1,12 +1,12 @@
 # MiniSocket
 
-MiniSocket is a lightweight Java socket communication library designed for persistent client-server communication.
+MiniSocket is a lightweight Java socket communication library designed for persistent backend-client communication.
 
 It provides a simple abstraction over Java TCP sockets with built-in connection management, automatic reconnection, packet handling, authentication, and threaded communication.
 
 ## Features
 
-* TCP client-server communication
+* TCP backend-client communication
 * Persistent socket connections
 * Automatic client reconnection
 * Connection lifecycle management
@@ -50,7 +50,7 @@ SocketClient
 ```java
 new MiniSocket(
         backendData,
-        "your-token",       // Optional default -> "token"
+        "your-token",
         databaseService    // Optional
 ).start("your-socket-port");
 ```
@@ -61,10 +61,10 @@ new MiniSocket(
 
 ```java
 SocketClient client = new SocketClient(
-        "your-client-name", // Optional default -> "server"
+        "your-client-name", 
         "your-socket-ip",
         "your-socket-port",
-        "your-token", // Optional default -> "token"
+        "your-token",
         socketClient -> {
             // Called after a successful connection.
         } // Optional
@@ -98,9 +98,9 @@ Example:
 ```json
 {
     "token": "your-token",
-    "server": "example-client",
+    "client": "example-client",
     "packet": {
-        "channel": "example_channel",
+        "post": "example_channel",
         "body": {
             "message": "Hello!"
         }
@@ -129,7 +129,7 @@ client.send(packet.build());
 JsonObject body = ...;
 
 PacketData packetData = new PacketData(
-        "send-channel",
+        "target-channel",
         body
 );
 
@@ -151,7 +151,7 @@ Socket target = ...;
 
 Packet packet = ...;
 PacketData packetData = new PacketData(
-        "send-channel",
+        "target-channel",
         body
 );
 
@@ -231,7 +231,7 @@ Packet sending is synchronized per connection to prevent concurrent writes from 
 
 ## Design Goals
 
-MiniSocket is intentionally designed to remain independent from any specific application or platform.
+MiniSocket is intentionally designed to remain independent of any specific application or platform.
 
 It can be used for:
 
@@ -240,6 +240,6 @@ It can be used for:
 * Game servers
 * Proxies
 * Internal service communication
-* Custom client-server applications
+* Custom backend-client applications
 
-The library does not depend on Minecraft or any specific server implementation.
+The library does not depend on Minecraft or any specific client implementation.
