@@ -129,7 +129,7 @@ client.send(packet.build());
 JsonObject body = ...;
 
 PacketData packetData = new PacketData(
-        "target-channel",
+        "target-post",
         body
 );
 
@@ -151,7 +151,7 @@ Socket target = ...;
 
 Packet packet = ...;
 PacketData packetData = new PacketData(
-        "target-channel",
+        "target-post",
         body
 );
 
@@ -187,7 +187,7 @@ Incoming JSON
      ↓
  PacketData
      ↓
-   Channel
+   Post
      ↓
 PacketHandler
      ↓
