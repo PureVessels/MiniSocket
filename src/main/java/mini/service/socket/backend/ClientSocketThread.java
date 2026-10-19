@@ -31,6 +31,7 @@ public final class ClientSocketThread extends Thread {
 
     private static final int HEARTBEAT_TIMEOUT_MS = 15_000;
 
+    private final SocketBackend backend;
     private final Socket socket;
     private final MainBackend backendData;
 
@@ -40,7 +41,8 @@ public final class ClientSocketThread extends Thread {
 
     private volatile PrintWriter writer;
 
-    ClientSocketThread(Socket socket, String token, MainBackend backendData) {
+    ClientSocketThread(SocketBackend backend, Socket socket, String token, MainBackend backendData) {
+        this.backend = backend;
         this.socket = socket;
         this.token = token;
 
@@ -51,6 +53,8 @@ public final class ClientSocketThread extends Thread {
 
     @Override
     public void run() {
+        if (backend.isShutdown()) { close(); return; }
+
         String line = null;
         SocketAddress remoteAddress = socket.getRemoteSocketAddress();
         DisconnectReason reason = DisconnectReason.CLOSED;
@@ -131,12 +135,16 @@ public final class ClientSocketThread extends Thread {
         } catch (SocketTimeoutException ex) {
             reason = DisconnectReason.TIMEOUT;
         }  catch (IOException | RuntimeException ex) {
-            reason = DisconnectReason.ERROR;
+            if (backend.isShutdown()) {
+                reason = DisconnectReason.SHUTDOWN;
+            } else {
+                reason = DisconnectReason.ERROR;
 
-            MiniSocket.getLogger().info("Socket Info: " + remoteAddress);
-            MiniSocket.getLogger().info("Line: " + line);
-            MiniSocket.getLogger().severe("Packet Control error: "+ ex.getMessage());
-            ex.printStackTrace();
+                MiniSocket.getLogger().info("Socket Info: " + remoteAddress);
+                MiniSocket.getLogger().info("Line: " + line);
+                MiniSocket.getLogger().severe("Packet Control error: " + ex.getMessage());
+                ex.printStackTrace();
+            }
         } finally {
             if (saved) {
                 backendData.removeConnection(socket);
@@ -158,5 +166,9 @@ public final class ClientSocketThread extends Thread {
         writer.println(json);
 
         if (writer.checkError()) throw new IllegalStateException("Failed to send packet.");
+    }
+
+    void close() {
+        try { socket.close(); } catch (IOException ignored) {}
     }
 }

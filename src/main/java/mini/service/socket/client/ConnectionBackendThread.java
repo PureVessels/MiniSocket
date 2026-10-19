@@ -7,7 +7,6 @@ import java.io.IOException;
 public class ConnectionBackendThread extends Thread {
 
     private final SocketClient client;
-    private Thread heartbeat;
 
     public ConnectionBackendThread(SocketClient client) {
         super("MiniSocket-ConnectionBackend");
@@ -16,7 +15,9 @@ public class ConnectionBackendThread extends Thread {
 
     @Override
     public void run() {
-        while (!isInterrupted()) {
+        while (!isInterrupted() || !client.isShutdown()) {
+            HeartbeatThread heartbeat = null;
+
             try {
                 if (client.isShutdown()) {
                     interrupt();
@@ -24,35 +25,28 @@ public class ConnectionBackendThread extends Thread {
                 }
 
                 client.connect();
-
                 MiniSocket.getLogger().info("Connected to socket server: " + client.getHost() + ":" + client.getPort());
 
                 BackendSocketThread thread = new BackendSocketThread(client);
                 thread.start();
 
+                heartbeat = new HeartbeatThread(client);
+                heartbeat.start();
+
                 client.onConnect();
                 thread.join();
-                if (heartbeat == null) {
-                    heartbeat = new HeartbeatThread(client);
-                }
 
             } catch (IOException e) {
-                MiniSocket.getLogger().warning("Socket connection failed: " + e.getMessage());
+                if(!client.isShutdown()) MiniSocket.getLogger().warning("Socket connection failed: " + e.getMessage());
             } catch (InterruptedException e) {
                 interrupt();
                 break;
             } finally {
-                if (heartbeat != null) {
-                    heartbeat.interrupt();
-                    heartbeat = null;
-                }
-
-                client.closeConnection(false);
+                if (heartbeat != null) heartbeat.interrupt();
+                client.closeConnection();
             }
 
-            if (isInterrupted()) {
-                break;
-            }
+            if (client.isShutdown() || isInterrupted()) { break;}
 
             try {
                 Thread.sleep(2000L);

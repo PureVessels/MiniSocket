@@ -39,12 +39,18 @@ public abstract class MainBackend {
 
     public final boolean hasConnection(Socket socket) { return clientSockets.containsKey(socket); }
 
-    public final void  onClientDisconnected(Socket socket, DisconnectReason reason) {
-        if (hasConnection(socket)) return;
+    public final void onClientDisconnected(Socket socket, DisconnectReason reason) {
         SocketAddress remoteAddress = socket.getRemoteSocketAddress();
 
         String message = "Disconnected from " + remoteAddress;
         if (reason != DisconnectReason.DISCONNECT) message = message + " reason: " + reason;
         MiniSocket.getLogger().info(message);
+
+        removeConnection(socket);
+    }
+
+    final void closeAll() {
+        clientSockets.values().forEach(ClientSocketThread::close);
+        clientSockets.keySet().forEach(this::removeConnection);
     }
 }

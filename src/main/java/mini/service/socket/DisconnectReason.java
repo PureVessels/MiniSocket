@@ -4,5 +4,6 @@ public enum DisconnectReason {
     CLOSED,
     DISCONNECT,
     ERROR,
+    SHUTDOWN,
     TIMEOUT
 }

@@ -118,27 +118,28 @@ public final class SocketClient {
             writer.newLine();
             writer.flush();
 
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             throw new IllegalStateException("Failed to send packet.", e);
         }
     }
 
-    public synchronized void shutdown(){
-        closeConnection(true);
+    public void shutdown() {
+        shutdown = true;
+        synchronized (this) {
+            if (isConnected()) {
+                try { send(new DisconnectPacket()); } catch (Exception ignored) {}
+            }
+        }
+        closeConnection();
     }
 
-    synchronized void closeConnection(boolean shutdown) {
-        try {
-            if (socket != null) {
-                this.shutdown = shutdown;
-                if(shutdown){ send(new DisconnectPacket()); }
-                socket.close();
-            }
-        } catch (IOException ignored) {
-        } finally {
-            socket = null;
-            reader = null;
-            writer = null;
+    synchronized void closeConnection() {
+        Socket s = this.socket;
+        socket = null;
+        reader = null;
+        writer = null;
+        if (s != null) {
+            try { s.close(); } catch (IOException ignored) {}
         }
     }
 

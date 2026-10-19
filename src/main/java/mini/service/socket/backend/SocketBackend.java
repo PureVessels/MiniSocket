@@ -11,8 +11,10 @@ public final class SocketBackend extends Thread {
     private final int port;
     private final String token;
 
-    private ServerSocket serverSocket;
+    private volatile ServerSocket serverSocket;
     private final MainBackend backendData;
+
+    private volatile boolean stopping;
 
     public SocketBackend(MainBackend backendData, int port, String token)  {
         this.backendData = backendData;
@@ -24,10 +26,16 @@ public final class SocketBackend extends Thread {
     public void run() {
         try {
             serverSocket = new ServerSocket(port);
+            if (stopping){
+                backendData.closeAll();
+                if (serverSocket != null) { serverSocket.close(); }
+                return;
+            }
+
             MiniSocket.getLogger().info("Listening on port " + port);
 
-            try {
-                while (!serverSocket.isClosed()) {
+            while (!serverSocket.isClosed()) {
+                try {
                     Socket socket = serverSocket.accept();
 
                     String ip = socket.getInetAddress().getHostAddress();
@@ -38,18 +46,28 @@ public final class SocketBackend extends Thread {
                         continue;
                     }
 
-                    ClientSocketThread connection = new ClientSocketThread(socket, token, backendData);
+                    ClientSocketThread connection = new ClientSocketThread(this, socket, token, backendData);
                     connection.start();
+                } catch (RuntimeException exception) {
+                    MiniSocket.getLogger().severe("Socket connection control failed: " + exception.getMessage());
+                    exception.printStackTrace();
                 }
-            } catch (RuntimeException exception) {
-                MiniSocket.getLogger().severe("Socket connection control failed: " + exception.getMessage());
-                exception.printStackTrace();
             }
         } catch (IOException e) {
-            MiniSocket.getLogger().severe("Server Socket not started! Error: " + e.getMessage());
-            e.printStackTrace();
+            if (!stopping) {
+                MiniSocket.getLogger().severe("Server Socket not started! Error: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
     public ServerSocket getServerSocket() { return serverSocket; }
+
+    public void shutdown() {
+        stopping = true;
+        backendData.closeAll();
+        try { if (serverSocket != null) serverSocket.close(); } catch (IOException ignored) {}
+    }
+
+    public boolean isShutdown() { return stopping; }
 }
