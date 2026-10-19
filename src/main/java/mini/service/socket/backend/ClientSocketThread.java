@@ -2,11 +2,13 @@ package mini.service.socket.backend;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import mini.service.socket.DisconnectReason;
 import mini.service.socket.MiniSocket;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
 import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.thrown.packet.PacketException;
+import mini.service.socket.thrown.socket.DisconnectSocket;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.security.MessageDigest;
 import java.util.Set;
 
@@ -26,14 +29,16 @@ public final class ClientSocketThread extends Thread {
             "::1"
     );
 
+    private static final int HEARTBEAT_TIMEOUT_MS = 15_000;
+
     private final Socket socket;
     private final MainBackend backendData;
 
     private final String token;
 
-    private boolean saved;
+    private volatile boolean saved;
 
-    private PrintWriter writer;
+    private volatile PrintWriter writer;
 
     ClientSocketThread(Socket socket, String token, MainBackend backendData) {
         this.socket = socket;
@@ -48,6 +53,7 @@ public final class ClientSocketThread extends Thread {
     public void run() {
         String line = null;
         SocketAddress remoteAddress = socket.getRemoteSocketAddress();
+        DisconnectReason reason = DisconnectReason.CLOSED;
 
         try {
             String ip = socket.getInetAddress().getHostAddress();
@@ -58,6 +64,9 @@ public final class ClientSocketThread extends Thread {
                 socket.close();
                 return;
             }
+
+            socket.setSoTimeout(HEARTBEAT_TIMEOUT_MS);
+            socket.setKeepAlive(true);
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -88,6 +97,15 @@ public final class ClientSocketThread extends Thread {
 
                     PacketData packet = PacketData.load(jsonPacket);
 
+                    if (packet.post().equals("heartbeat")){
+                        continue;
+                    }
+
+                    if (packet.post().equals("disconnect")) {
+                        reason = DisconnectReason.DISCONNECT;
+                        break;
+                    }
+
                     PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
                     if (handler != null){
                         if (!handler.reader().equals(PacketHandler.Reader.BACKEND)){
@@ -110,16 +128,21 @@ public final class ClientSocketThread extends Thread {
                 }
             }
 
-        } catch (IOException | RuntimeException ex) {
+        } catch (SocketTimeoutException ex) {
+            reason = DisconnectReason.TIMEOUT;
+        }  catch (IOException | RuntimeException ex) {
+            reason = DisconnectReason.ERROR;
+
             MiniSocket.getLogger().info("Socket Info: " + remoteAddress);
             MiniSocket.getLogger().info("Line: " + line);
             MiniSocket.getLogger().severe("Packet Control error: "+ ex.getMessage());
             ex.printStackTrace();
         } finally {
-            if (saved) backendData.removeConnection(socket);
-
-            try { socket.close();
-            } catch (IOException ignored) {}
+            if (saved) {
+                backendData.removeConnection(socket);
+                backendData.onClientDisconnected(socket, reason);
+            }
+            try { socket.close(); } catch (IOException ignored) {}
         }
     }
 

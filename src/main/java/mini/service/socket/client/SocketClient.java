@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import mini.service.socket.MiniSocket;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
+import mini.service.socket.packet.connection.DisconnectPacket;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -24,6 +25,8 @@ public final class SocketClient {
     private volatile Socket socket;
     private volatile BufferedReader reader;
     private volatile BufferedWriter writer;
+
+    private volatile boolean shutdown;
 
     public SocketClient(String clientName, String host, int port, String token, Consumer<SocketClient> onConnect) {
         this.host = host;
@@ -120,9 +123,15 @@ public final class SocketClient {
         }
     }
 
-    synchronized void closeConnection() {
+    public synchronized void shutdown(){
+        closeConnection(true);
+    }
+
+    synchronized void closeConnection(boolean shutdown) {
         try {
             if (socket != null) {
+                this.shutdown = shutdown;
+                if(shutdown){ send(new DisconnectPacket()); }
                 socket.close();
             }
         } catch (IOException ignored) {
@@ -134,5 +143,6 @@ public final class SocketClient {
     }
 
     BufferedReader getReader() { return reader; }
+    boolean isShutdown() { return shutdown; }
 }
 

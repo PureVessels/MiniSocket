@@ -1,10 +1,13 @@
 package mini.service.socket.backend;
 
+import mini.service.socket.DisconnectReason;
+import mini.service.socket.MiniSocket;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
 import org.jspecify.annotations.Nullable;
 
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,5 +35,16 @@ public abstract class MainBackend {
         if (connectionThread != null) {
             connectionThread.send(packetData);
         }
+    }
+
+    public final boolean hasConnection(Socket socket) { return clientSockets.containsKey(socket); }
+
+    public final void  onClientDisconnected(Socket socket, DisconnectReason reason) {
+        if (hasConnection(socket)) return;
+        SocketAddress remoteAddress = socket.getRemoteSocketAddress();
+
+        String message = "Disconnected from " + remoteAddress;
+        if (reason != DisconnectReason.DISCONNECT) message = message + " reason: " + reason;
+        MiniSocket.getLogger().info(message);
     }
 }

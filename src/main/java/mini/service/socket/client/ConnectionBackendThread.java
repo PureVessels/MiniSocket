@@ -7,6 +7,7 @@ import java.io.IOException;
 public class ConnectionBackendThread extends Thread {
 
     private final SocketClient client;
+    private Thread heartbeat;
 
     public ConnectionBackendThread(SocketClient client) {
         super("MiniSocket-ConnectionBackend");
@@ -15,8 +16,13 @@ public class ConnectionBackendThread extends Thread {
 
     @Override
     public void run() {
-        while (!    isInterrupted()) {
+        while (!isInterrupted()) {
             try {
+                if (client.isShutdown()) {
+                    interrupt();
+                    break;
+                }
+
                 client.connect();
 
                 MiniSocket.getLogger().info("Connected to socket server: " + client.getHost() + ":" + client.getPort());
@@ -25,8 +31,10 @@ public class ConnectionBackendThread extends Thread {
                 thread.start();
 
                 client.onConnect();
-
                 thread.join();
+                if (heartbeat == null) {
+                    heartbeat = new HeartbeatThread(client);
+                }
 
             } catch (IOException e) {
                 MiniSocket.getLogger().warning("Socket connection failed: " + e.getMessage());
@@ -34,7 +42,12 @@ public class ConnectionBackendThread extends Thread {
                 interrupt();
                 break;
             } finally {
-                client.closeConnection();
+                if (heartbeat != null) {
+                    heartbeat.interrupt();
+                    heartbeat = null;
+                }
+
+                client.closeConnection(false);
             }
 
             if (isInterrupted()) {
