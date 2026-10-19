@@ -11,6 +11,7 @@ public final class HeartbeatThread extends Thread {
         super("MiniSocket-Heartbeat");
         setDaemon(true);
         this.client = client;
+        setDaemon(true);
     }
 
     @Override

@@ -8,7 +8,6 @@ import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
 import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.thrown.packet.PacketException;
-import mini.service.socket.thrown.socket.DisconnectSocket;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,12 +41,15 @@ public final class ClientSocketThread extends Thread {
     private volatile PrintWriter writer;
 
     ClientSocketThread(SocketBackend backend, Socket socket, String token, MainBackend backendData) {
+        super("Mini-Client-Connection-Thread");
         this.backend = backend;
         this.socket = socket;
         this.token = token;
 
         this.backendData = backendData;
         this.saved = false;
+
+        setDaemon(true);
     }
 
 
@@ -110,7 +112,7 @@ public final class ClientSocketThread extends Thread {
                         break;
                     }
 
-                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
+                    PacketHandler handler = MiniSocket.getPacketHandler(packet.post());
                     if (handler != null){
                         if (!handler.reader().equals(PacketHandler.Reader.BACKEND)){
                             MiniSocket.getLogger().warning(packet.post() + " this packet not read!");

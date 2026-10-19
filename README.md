@@ -91,7 +91,7 @@ Connected
 
 Communication is based on JSON packets.
 
-A packet contains a channel and a packet body.
+A packet contains a post and a packet body.
 
 Example:
 
@@ -100,7 +100,7 @@ Example:
     "token": "your-token",
     "client": "example-client",
     "packet": {
-        "post": "example_channel",
+        "post": "example_post",
         "body": {
             "message": "Hello!"
         }

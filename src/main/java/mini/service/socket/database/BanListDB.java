@@ -37,7 +37,7 @@ public final class BanListDB extends DatabaseManager {
         MiniSocket.getInstance().getDatabase().createTable("socket_banlist",
                 """
                         CREATE TABLE IF NOT EXISTS socket_banlist (
-                            ip CHAR(36) NOT NULL,
+                            ip CHAR(45) NOT NULL,
                             PRIMARY KEY (ip)
                         )
                         """);

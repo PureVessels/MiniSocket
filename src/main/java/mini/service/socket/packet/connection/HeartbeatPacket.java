@@ -10,6 +10,8 @@ public final class HeartbeatPacket extends Packet {
 
     @Override
     public JsonObject getBody() {
-        return new JsonObject();
+        JsonObject body = new JsonObject();
+        body.addProperty("time", System.currentTimeMillis());
+        return body;
     }
 }

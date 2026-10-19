@@ -7,6 +7,7 @@ import mini.service.socket.packet.PacketData;
 import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.thrown.packet.PacketException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 
 public final class BackendSocketThread extends Thread {
@@ -14,7 +15,9 @@ public final class BackendSocketThread extends Thread {
     private final SocketClient client;
 
     BackendSocketThread(SocketClient socketClient) {
+        super("Mini-Backend-Connection-Thread");
         this.client = socketClient;
+        setDaemon(true);
     }
 
     @Override
@@ -22,7 +25,8 @@ public final class BackendSocketThread extends Thread {
         String line;
 
         try {
-            while ((line = client.getReader().readLine()) != null) {
+            BufferedReader reader = client.getReader();
+            while ((line = reader.readLine()) != null) {
 
                 JsonObject json = MiniSocket.getGson().fromJson(line, JsonObject.class);
 
@@ -34,7 +38,7 @@ public final class BackendSocketThread extends Thread {
                     JsonObject jsonPacket = json.getAsJsonObject("packet");
 
                     PacketData packet = PacketData.load(jsonPacket);
-                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
+                    PacketHandler handler = MiniSocket.getPacketHandler(packet.post());
 
                     if (handler != null) {
 

@@ -9,5 +9,9 @@ public final class DisconnectPacket extends Packet {
     public String getPost() { return "disconnect"; }
 
     @Override
-    public JsonObject getBody() { return new JsonObject(); }
+    public JsonObject getBody() {
+        JsonObject body = new JsonObject();
+        body.addProperty("time", System.currentTimeMillis());
+        return body;
+    }
 }

@@ -51,6 +51,5 @@ public abstract class MainBackend {
 
     final void closeAll() {
         clientSockets.values().forEach(ClientSocketThread::close);
-        clientSockets.keySet().forEach(this::removeConnection);
     }
 }

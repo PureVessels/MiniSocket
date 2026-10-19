@@ -27,14 +27,14 @@ public final class MiniSocket {
 
     private static final Logger logger = Logger.getLogger(MiniSocket.class.getName());
 
-    private final Map<String, PacketHandler> HANDLERS = new ConcurrentHashMap<>();
+    private static final Map<String, PacketHandler> HANDLERS = new ConcurrentHashMap<>();
 
     private final Set<String> WHITE_LIST = ConcurrentHashMap.newKeySet();
     private final Set<String> BAN_LIST = ConcurrentHashMap.newKeySet();
 
-    private ServerSocket serverSocket;
-
     private final String token;
+
+    private SocketBackend socketBackend;
     private MainBackend backend;
 
     private boolean hasDatabase;
@@ -62,7 +62,7 @@ public final class MiniSocket {
             return;
         }
 
-        if (token.isEmpty()) getLogger().warning("token is empty.");
+        if (isTokenDefault(token)) throw new IllegalArgumentException("Token cannot be empty or default.");
 
         this.backend = backend;
 
@@ -88,9 +88,30 @@ public final class MiniSocket {
     }
 
     public void start(int port) {
-        SocketBackend socketServer = new SocketBackend(backend, port, token);
-        socketServer.start();
-        this.serverSocket = socketServer.getServerSocket();
+        socketBackend = new SocketBackend(backend, port, token);
+        socketBackend.start();
+    }
+
+    public void stop() {
+        if (socketBackend != null) {
+            socketBackend.shutdown();
+            socketBackend = null;
+        }
+        instance = null;
+    }
+
+    public void reloadWhiteList(){
+        this.WHITE_LIST.clear();
+        if (whiteListDB != null) {
+            whiteListDB.getWhiteList().thenAccept(this.WHITE_LIST::addAll);
+        }
+    }
+
+    public void reloadBanList(){
+        this.BAN_LIST.clear();
+        if (banListDB != null) {
+            banListDB.getBanList().thenAccept(this.BAN_LIST::addAll);
+        }
     }
 
     public boolean isWhitelisted(String ip){ return WHITE_LIST.contains(ip); }
@@ -114,12 +135,12 @@ public final class MiniSocket {
         }
     }
 
-    public void registerPacketHandler(PacketHandler handler){ HANDLERS.putIfAbsent(handler.post(), handler); }
-    public @Nullable PacketHandler getPacketHandler(String post){ return HANDLERS.get(post); }
+    public static void registerPacketHandler(PacketHandler handler){ HANDLERS.putIfAbsent(handler.post(), handler); }
+    public static @Nullable PacketHandler getPacketHandler(String post){ return HANDLERS.get(post); }
 
     public boolean hasDatabase(){ return hasDatabase; }
     public @Nullable DatabaseService getDatabase() { return database; }
-    public ServerSocket getServerSocket(){ return serverSocket; }
+    public @Nullable ServerSocket getServerSocket(){ return socketBackend != null ? socketBackend.getServerSocket() : null; }
 
     private void validateIp(String ip) {
         try {

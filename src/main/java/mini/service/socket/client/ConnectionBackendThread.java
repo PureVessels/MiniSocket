@@ -9,13 +9,14 @@ public class ConnectionBackendThread extends Thread {
     private final SocketClient client;
 
     public ConnectionBackendThread(SocketClient client) {
-        super("MiniSocket-ConnectionBackend");
+        super("MiniSocket-ReConnectionBackend");
         this.client = client;
+        setDaemon(true);
     }
 
     @Override
     public void run() {
-        while (!isInterrupted() || !client.isShutdown()) {
+        while (!isInterrupted() && !client.isShutdown()) {
             HeartbeatThread heartbeat = null;
 
             try {
@@ -33,7 +34,12 @@ public class ConnectionBackendThread extends Thread {
                 heartbeat = new HeartbeatThread(client);
                 heartbeat.start();
 
-                client.onConnect();
+                try {
+                    client.onConnect();
+                } catch (RuntimeException e) {
+                    MiniSocket.getLogger().severe("onConnect failed: " + e.getMessage());
+                    e.printStackTrace();
+                }
                 thread.join();
 
             } catch (IOException e) {

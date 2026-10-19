@@ -17,9 +17,12 @@ public final class SocketBackend extends Thread {
     private volatile boolean stopping;
 
     public SocketBackend(MainBackend backendData, int port, String token)  {
+        super("MiniSocketBackend");
         this.backendData = backendData;
         this.port = port;
         this.token = token;
+
+        setDaemon(true);
     }
 
     @Override

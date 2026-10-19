@@ -42,7 +42,7 @@ public class WhiteListDB extends DatabaseManager {
         MiniSocket.getInstance().getDatabase().createTable("socket_whitelist",
                 """
                         CREATE TABLE IF NOT EXISTS socket_whitelist (
-                            ip CHAR(36) NOT NULL,
+                            ip CHAR(45) NOT NULL,
                             PRIMARY KEY (ip)
                         )
                         """);
