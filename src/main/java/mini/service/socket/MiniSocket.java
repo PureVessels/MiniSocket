@@ -135,6 +135,24 @@ public final class MiniSocket {
         }
     }
 
+    public void removeWhiteList(String ip){
+        validateIp(ip);
+        if (hasDatabase){
+            whiteListDB.deleteData(ip);
+        } else WHITE_LIST.remove(ip);
+
+        reloadWhiteList();
+    }
+
+    public void removeBan(String ip){
+        validateIp(ip);
+        if (hasDatabase){
+            banListDB.deleteData(ip);
+        } else BAN_LIST.remove(ip);
+
+        reloadBanList();
+    }
+
     public static void registerPacketHandler(PacketHandler handler){ HANDLERS.putIfAbsent(handler.post(), handler); }
     public static @Nullable PacketHandler getPacketHandler(String post){ return HANDLERS.get(post); }
 
