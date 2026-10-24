@@ -95,15 +95,15 @@ public final class ClientSocketThread extends Thread {
                         return;
                     }
 
-                    if (!saved){
-                        writer = new PrintWriter(socket.getOutputStream(), true);
-                        backendData.addConnection(socket, this);
-                        saved = true;
-                    }
-
                     PacketData packet = PacketData.load(jsonPacket);
 
                     if (packet.post().equals("heartbeat")){
+                        if (!saved){
+                            writer = new PrintWriter(socket.getOutputStream(), true);
+                            backendData.addConnection(socket, this);
+                            saved = true;
+                        }
+
                         continue;
                     }
 

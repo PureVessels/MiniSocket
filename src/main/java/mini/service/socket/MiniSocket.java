@@ -67,6 +67,8 @@ public final class MiniSocket {
 
         this.backend = backend;
         instance = this;
+        this.backendSocket = true;
+
 
         if (databaseService != null) {
             database = databaseService;
@@ -91,8 +93,6 @@ public final class MiniSocket {
         }
 
         this.hasDatabase = this.database != null;
-
-        this.backendSocket = true;
     }
 
     public MiniSocket(@NotNull MainBackend backend, String token){
