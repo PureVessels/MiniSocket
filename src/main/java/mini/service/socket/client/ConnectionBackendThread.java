@@ -1,10 +1,11 @@
 package mini.service.socket.client;
 
 import mini.service.socket.MiniSocket;
+import mini.service.socket.utils.socket.SocketThread;
 
 import java.io.IOException;
 
-public class ConnectionBackendThread extends Thread {
+public class ConnectionBackendThread extends SocketThread {
 
     private final SocketClient client;
 
@@ -63,4 +64,8 @@ public class ConnectionBackendThread extends Thread {
         }
     }
 
+    @Override
+    public void shutdown() {
+        client.shutdown();
+    }
 }

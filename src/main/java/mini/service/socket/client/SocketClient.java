@@ -5,6 +5,7 @@ import mini.service.socket.MiniSocket;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
 import mini.service.socket.packet.connection.DisconnectPacket;
+import mini.service.socket.utils.socket.SocketThread;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -15,11 +16,13 @@ import java.util.function.Consumer;
 public final class SocketClient {
 
     private final String host;
-    private final int port;
+
+    private int port;
 
     private final String token;
     private String clientName;
 
+    private ConnectionBackendThread connectionBackendThread;
     private Consumer<SocketClient> onConnect;
 
     private volatile Socket socket;
@@ -28,9 +31,8 @@ public final class SocketClient {
 
     private volatile boolean shutdown;
 
-    public SocketClient(String clientName, String host, int port, String token, Consumer<SocketClient> onConnect) {
+    public SocketClient(String clientName, String host, String token, Consumer<SocketClient> onConnect) {
         this.host = host;
-        this.port = port;
 
         this.token = token;
         if (MiniSocket.isTokenDefault(token)) {
@@ -49,10 +51,8 @@ public final class SocketClient {
             MiniSocket.getLogger().warning("Connect Consumer is null");
         }
 
-        new ConnectionBackendThread(this).start();
+        this.connectionBackendThread = new ConnectionBackendThread(this);
     }
-
-    public SocketClient(String clientName, String host, int port, String token) { this(clientName, host, port, token, null); }
 
 
     public String getHost(){ return host; }
@@ -131,6 +131,11 @@ public final class SocketClient {
             }
         }
         closeConnection();
+    }
+
+    public SocketThread getThread(int port){
+        this.port = port;
+        return connectionBackendThread;
     }
 
     synchronized void closeConnection() {

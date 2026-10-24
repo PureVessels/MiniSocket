@@ -38,7 +38,7 @@ public final class BackendSocketThread extends Thread {
                     JsonObject jsonPacket = json.getAsJsonObject("packet");
 
                     PacketData packet = PacketData.load(jsonPacket);
-                    PacketHandler handler = MiniSocket.getPacketHandler(packet.post());
+                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
 
                     if (handler != null) {
 

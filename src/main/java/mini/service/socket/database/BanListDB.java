@@ -29,8 +29,8 @@ public final class BanListDB extends DatabaseManager {
         );
     }
 
-    public void createData(String ip) {
-        executeUpdate(builder().createInsertSQL(), ps -> ps.setString(1, ip));
+    public CompletableFuture<Void> createData(String ip) {
+       return executeUpdate(builder().createInsertSQL(), ps -> ps.setString(1, ip));
     }
 
     public CompletableFuture<Void> deleteData(String ip){

@@ -112,7 +112,7 @@ public final class ClientSocketThread extends Thread {
                         break;
                     }
 
-                    PacketHandler handler = MiniSocket.getPacketHandler(packet.post());
+                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
                     if (handler != null){
                         if (!handler.reader().equals(PacketHandler.Reader.BACKEND)){
                             MiniSocket.getLogger().warning(packet.post() + " this packet not read!");

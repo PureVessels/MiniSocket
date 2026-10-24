@@ -1,12 +1,13 @@
 package mini.service.socket.backend;
 
 import mini.service.socket.MiniSocket;
+import mini.service.socket.utils.socket.SocketThread;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public final class SocketBackend extends Thread {
+public final class SocketBackend extends SocketThread {
 
     private final int port;
     private final String token;
