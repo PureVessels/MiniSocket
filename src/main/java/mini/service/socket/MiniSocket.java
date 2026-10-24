@@ -13,11 +13,14 @@ import org.jetbrains.annotations.Nullable;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class MiniSocket {
 
@@ -32,7 +35,7 @@ public final class MiniSocket {
     private final Set<String> WHITE_LIST = ConcurrentHashMap.newKeySet();
     private final Set<String> BAN_LIST = ConcurrentHashMap.newKeySet();
 
-    private final String token;
+    private static String token;
 
     private SocketBackend socketBackend;
     private MainBackend backend;
@@ -56,7 +59,7 @@ public final class MiniSocket {
             throw new IllegalStateException("MiniSocket is already initialized.");
         }
 
-        this.token = Objects.requireNonNull(token);
+        MiniSocket.token = Objects.requireNonNull(token);
         if (isTokenDefault(token)){
             getLogger().warning("token is defaulted.");
             return;
@@ -101,17 +104,27 @@ public final class MiniSocket {
     }
 
     public void reloadWhiteList(){
-        this.WHITE_LIST.clear();
-        if (whiteListDB != null) {
-            whiteListDB.getWhiteList().thenAccept(this.WHITE_LIST::addAll);
-        }
+        if (whiteListDB == null) return;
+
+        whiteListDB.getWhiteList().thenAccept(fresh -> {
+            WHITE_LIST.addAll(fresh);
+            WHITE_LIST.retainAll(fresh);
+        }).exceptionally(ex -> {
+            getLogger().severe("Ban list reload failed: " + ex.getMessage());
+            return null;
+        });
     }
 
-    public void reloadBanList(){
-        this.BAN_LIST.clear();
-        if (banListDB != null) {
-            banListDB.getBanList().thenAccept(this.BAN_LIST::addAll);
-        }
+    public void reloadBanList() {
+        if (banListDB == null) return;
+
+        banListDB.getBanList().thenAccept(fresh -> {
+            BAN_LIST.addAll(fresh);
+            BAN_LIST.retainAll(fresh);
+        }).exceptionally(ex -> {
+            getLogger().severe("Ban list reload failed: " + ex.getMessage());
+            return null;
+        });
     }
 
     public boolean isWhitelisted(String ip){ return WHITE_LIST.contains(ip); }
@@ -138,22 +151,30 @@ public final class MiniSocket {
     public void removeWhiteList(String ip){
         validateIp(ip);
         if (hasDatabase){
-            whiteListDB.deleteData(ip);
+            whiteListDB.deleteData(ip)
+                    .thenRun(this::reloadWhiteList)
+                    .exceptionally(ex -> {
+                        getLogger().severe("Whitelist delete failed: " + ex.getMessage());
+                        return null;
+                    });
         } else WHITE_LIST.remove(ip);
 
-        reloadWhiteList();
     }
 
     public void removeBan(String ip){
         validateIp(ip);
         if (hasDatabase){
-            banListDB.deleteData(ip);
+            banListDB.deleteData(ip)
+                    .thenRun(this::reloadWhiteList)
+                    .exceptionally(ex -> {
+                        getLogger().severe("Whitelist delete failed: " + ex.getMessage());
+                        return null;
+                    });
         } else BAN_LIST.remove(ip);
 
-        reloadBanList();
     }
 
-    public static void registerPacketHandler(PacketHandler handler){ HANDLERS.putIfAbsent(handler.post(), handler); }
+    public static void registerPacketHandler(PacketHandler handler, String token){ if(tokenValid(token)) HANDLERS.putIfAbsent(handler.post(), handler); }
     public static @Nullable PacketHandler getPacketHandler(String post){ return HANDLERS.get(post); }
 
     public boolean hasDatabase(){ return hasDatabase; }
@@ -171,6 +192,10 @@ public final class MiniSocket {
     private void createTables(){
         WhiteListDB.createTable();
         BanListDB.createTable();
+    }
+
+    private static boolean tokenValid(String token){
+        return MessageDigest.isEqual(token.getBytes(UTF_8), MiniSocket.token.getBytes(UTF_8));
     }
 
     public static MiniSocket getInstance() { return instance; }

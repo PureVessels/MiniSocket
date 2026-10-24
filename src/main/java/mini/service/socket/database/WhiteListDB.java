@@ -38,8 +38,8 @@ public class WhiteListDB extends DatabaseManager {
                 });
     }
 
-    public void deleteData(String ip){
-        executeUpdate(builder().createDeleteSQL(List.of("ip")), ps -> ps.setString(1, ip));
+    public CompletableFuture<Void> deleteData(String ip){
+       return executeUpdate(builder().createDeleteSQL(List.of("ip")), ps -> ps.setString(1, ip));
     }
 
     public static void createTable(){
