@@ -49,6 +49,17 @@ public abstract class MainBackend {
         removeConnection(socket);
     }
 
+    public final void sendPacket(Packet packetData, Socket socket) {
+        sendPacket(packetData.build(), socket);
+    }
+
+    public final void sendPacket(PacketData packetData, Socket socket) {
+        ClientSocketThread connectionThread = getConnectionThread(socket);
+        if (connectionThread == null) throw new IllegalStateException("No connection thread for socket: " + socket);
+
+        connectionThread.send(packetData);
+    }
+
     final void closeAll() {
         clientSockets.values().forEach(ClientSocketThread::close);
     }
