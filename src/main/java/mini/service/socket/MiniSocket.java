@@ -66,6 +66,8 @@ public final class MiniSocket {
         if (isTokenDefault(token)) throw new IllegalArgumentException("Token cannot be empty or default.");
 
         this.backend = backend;
+        instance = this;
+
         if (databaseService != null) {
             database = databaseService;
 
@@ -91,8 +93,6 @@ public final class MiniSocket {
         this.hasDatabase = this.database != null;
 
         this.backendSocket = true;
-
-        instance = this;
     }
 
     public MiniSocket(@NotNull MainBackend backend, String token){
