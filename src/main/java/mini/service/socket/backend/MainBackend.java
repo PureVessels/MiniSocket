@@ -29,14 +29,6 @@ public abstract class MainBackend {
         removeSocket(socket);
     }
 
-    public final void send(Packet packet, Socket socket) { send(packet.build(), socket); }
-    public final void send(PacketData packetData, Socket socket) {
-        ClientSocketThread connectionThread = clientSockets.get(socket);
-        if (connectionThread != null) {
-            connectionThread.send(packetData);
-        }
-    }
-
     public final boolean hasConnection(Socket socket) { return clientSockets.containsKey(socket); }
 
     public final void onClientDisconnected(Socket socket, DisconnectReason reason) {
