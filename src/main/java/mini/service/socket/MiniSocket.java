@@ -244,6 +244,20 @@ public final class MiniSocket {
         }
     }
 
+    public void unregisterPacketHandler(PacketHandler handler, String token){
+        Objects.requireNonNull(handler, "handler");
+        String post = handler.post();
+
+        if (!tokenValid(token)) {
+            getLogger().warning("Packet handler unregister rejected (invalid token): " + post);
+            return;
+        }
+
+        if (handlers.remove(post) == null) {
+            getLogger().warning("Packet handler not registered: " + post);
+        }
+    }
+
     public @Nullable PacketHandler getPacketHandler(String post){ return handlers.get(post); }
 
     public boolean hasDatabase(){ return hasDatabase; }
@@ -255,6 +269,10 @@ public final class MiniSocket {
     public @Nullable ServerSocket getServerSocket(){
         requireBackend();
         return socketBackend != null ? socketBackend.getServerSocket() : null;
+    }
+
+    public @Nullable SocketClient getSocketClient(){
+        return socketClient;
     }
 
     private String normalizeIp(String ip) {
