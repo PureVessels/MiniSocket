@@ -29,34 +29,33 @@ public final class BackendSocketThread extends Thread {
         try {
             BufferedReader reader = client.getReader();
             while ((line = reader.readLine()) != null) {
-
+                try {
                 JsonObject json = MiniSocket.getGson().fromJson(line, JsonObject.class);
 
                 if (json == null || !json.has("packet")) {
                     throw new PacketException("Missing required fields.", PacketException.Function.CONTROL);
                 }
 
-                try {
-                    JsonObject jsonPacket = json.getAsJsonObject("packet");
+                JsonObject jsonPacket = json.getAsJsonObject("packet");
 
-                    PacketData packet = PacketData.load(jsonPacket);
-                    List<RegisteredListener> handler = MiniSocket.getInstance().getPacketHandlers(packet.post());
+                PacketData packet = PacketData.load(jsonPacket);
+                List<RegisteredListener> handler = MiniSocket.getInstance().getPacketHandlers(packet.post());
 
-                    for (RegisteredListener listener : handler) {
-                        if (!listener.reader().isClientReader()) {
-                            MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
-                            continue;
-                        }
-
-                        try {
-                            listener.execute(packet.body());
-                        } catch (PacketException e) {
-                            MiniSocket.getLogger().log(Level.SEVERE, e.getMessage(), e.getCause());
-                        }
+                for (RegisteredListener listener : handler) {
+                    if (!listener.reader().isClientReader()) {
+                        MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
+                        continue;
                     }
 
+                    try {
+                        listener.execute(packet.body());
+                    } catch (PacketException e) {
+                        MiniSocket.getLogger().log(Level.SEVERE, e.getMessage(), e.getCause());
+                    }
+                }
+
                 } catch (RuntimeException e) {
-                    MiniSocket.getLogger().warning("Invalid packet received: " + line);
+                    MiniSocket.getLogger().log(Level.WARNING, "Invalid packet received: " + line, e);
                 }
             }
 

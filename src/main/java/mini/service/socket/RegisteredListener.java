@@ -40,8 +40,8 @@ public final class RegisteredListener {
 
     public PacketReader reader() { return listener.reader(); }
 
-    public void execute(JsonObject body) { runSafely(listener -> listener.execute(body)); }
-    public void execute(JsonObject body, Socket socket) { runSafely(listener -> listener.execute(body, socket)); }
+    public void execute(JsonObject body) { executeWrapped(listener -> listener.execute(body)); }
+    public void execute(JsonObject body, Socket socket) { executeWrapped(listener -> listener.execute(body, socket)); }
 
     @Override
     public boolean equals(Object o) { return o instanceof RegisteredListener other && listener == other.listener; }
@@ -49,7 +49,7 @@ public final class RegisteredListener {
     @Override
     public int hashCode() { return System.identityHashCode(listener); }
 
-    private void runSafely(Consumer<PacketListener> action) {
+    private void executeWrapped(Consumer<PacketListener> action) {
         try {
             action.accept(listener);
         } catch (Exception e) {

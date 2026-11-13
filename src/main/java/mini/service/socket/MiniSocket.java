@@ -209,9 +209,9 @@ public final class MiniSocket {
     public void removeBan(String ip) {
         requireBackend();
         String n = normalizeIp(ip);
-        if (!hasDatabase) { banList.remove(ip); return; }
+        if (!hasDatabase) { banList.remove(n); return; }
 
-        banListDB.deleteData(ip)
+        banListDB.deleteData(n)
                 .thenRun(() -> banList.remove(n))
                 .exceptionally(ex -> {
                     getLogger().log(Level.SEVERE, "Ban delete failed: " + n, ex);
@@ -222,15 +222,16 @@ public final class MiniSocket {
     public void removeWhiteList(String ip) {
         requireBackend();
         String n = normalizeIp(ip);
-        whiteList.remove(ip);
+        whiteList.remove(n);
         if (!hasDatabase) return;
 
-        whiteListDB.deleteData(ip).exceptionally(ex -> {
+        whiteListDB.deleteData(n).exceptionally(ex -> {
             getLogger().log(Level.SEVERE, "Whitelist delete failed, rolling back: " + n, ex);
             whiteList.add(n);
             return null;
         });
     }
+
 
     public RegisterHandlers getHandlers() { return handlers; }
     public List<RegisteredListener> getPacketHandlers(String post) { return handlers.getHandlers(post); }
@@ -281,9 +282,7 @@ public final class MiniSocket {
 
     public static MiniSocket getInstance() { return instance; }
 
-    public static boolean isTokenDefault(String token) {
-        return token.isEmpty() || token.equalsIgnoreCase("token");
-    }
+    public static boolean isTokenDefault(String token) { return token.isEmpty() || token.equalsIgnoreCase("token"); }
 
     public static Logger getLogger() { return logger; }
     public static Gson getGson() { return gson; }
