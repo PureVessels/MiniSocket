@@ -12,7 +12,6 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 
 public final class RegisteredListener {
 
