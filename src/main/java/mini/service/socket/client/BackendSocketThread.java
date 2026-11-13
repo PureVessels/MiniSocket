@@ -3,12 +3,13 @@ package mini.service.socket.client;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import mini.service.socket.MiniSocket;
+import mini.service.socket.RegisteredListener;
 import mini.service.socket.packet.PacketData;
-import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.thrown.packet.PacketException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.List;
 
 public final class BackendSocketThread extends Thread {
 
@@ -38,19 +39,17 @@ public final class BackendSocketThread extends Thread {
                     JsonObject jsonPacket = json.getAsJsonObject("packet");
 
                     PacketData packet = PacketData.load(jsonPacket);
-                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
+                    List<RegisteredListener> handler = MiniSocket.getInstance().getPacketHandlers(packet.post());
 
-                    if (handler != null) {
+                    if (!handler.isEmpty()) {
+                        for (RegisteredListener listener : handler) {
+                            if (!listener.reader().isClientReader()) {
+                                MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
+                                continue;
+                            }
 
-                        if (!handler.reader().equals(PacketHandler.Reader.CLIENT)) {
-                            MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
-                            continue;
+                            listener.execute(packet.body());
                         }
-
-                        handler.execute(packet.body());
-
-                    } else {
-                        MiniSocket.getLogger().warning("Invalid packet received: " + packet.post());
                     }
 
                 } catch (JsonSyntaxException e) {

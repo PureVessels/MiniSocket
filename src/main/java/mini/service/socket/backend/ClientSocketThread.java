@@ -4,9 +4,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import mini.service.socket.DisconnectReason;
 import mini.service.socket.MiniSocket;
+import mini.service.socket.RegisteredListener;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
-import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.thrown.packet.PacketException;
 
 import java.io.BufferedReader;
@@ -17,6 +17,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -112,22 +113,25 @@ public final class ClientSocketThread extends Thread {
                         break;
                     }
 
-                    PacketHandler handler = MiniSocket.getInstance().getPacketHandler(packet.post());
-                    if (handler != null){
-                        if (!handler.reader().equals(PacketHandler.Reader.BACKEND)){
-                            MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
-                            continue;
+                    List<RegisteredListener> listeners = MiniSocket.getInstance().getPacketHandlers(packet.post());
+
+                    if (!listeners.isEmpty()) {
+                        for (RegisteredListener listener : listeners) {
+                            if (!listener.reader().isBackendReader()){
+                                MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
+                                continue;
+                            }
+
+                            if (listener.ignoreClient(serverName)) continue;
+
+                            JsonObject packetBody = packet.body();
+
+                            if (listener.listener().requireSocket()){
+                                listener.execute(packetBody, socket);
+                            } else {
+                                listener.execute(packetBody);
+                            }
                         }
-
-                        if (handler.ignoreClient(serverName)) continue;
-
-                        JsonObject packetBody = packet.body();
-
-                        if (handler.requireSocket()) handler.execute(packetBody, socket);
-                        else handler.execute(packetBody);
-                    } else {
-                        MiniSocket.getLogger().warning("Invalid packet from " + remoteAddress);
-                        MiniSocket.getLogger().info("Invalid packet: " + packet.post());
                     }
                 } catch (JsonSyntaxException e) {
                     throw new PacketException("Invalid packet received: " + line, PacketException.Function.CONTROL);

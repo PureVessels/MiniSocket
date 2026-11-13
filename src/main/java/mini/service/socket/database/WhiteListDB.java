@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class WhiteListDB extends DatabaseManager {
 
@@ -47,5 +48,10 @@ public class WhiteListDB extends DatabaseManager {
                             PRIMARY KEY (ip)
                         )
                         """);
+    }
+
+    @Override
+    public void exists(Consumer<Boolean> consumer) {
+
     }
 }

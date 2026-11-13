@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import mini.service.socket.MiniSocket;
 import mini.service.socket.packet.Packet;
 import mini.service.socket.packet.PacketData;
-import mini.service.socket.packet.connection.DisconnectPacket;
+import mini.service.socket.utils.packet.Packets;
 import mini.service.socket.utils.socket.SocketThread;
 
 import java.io.*;
@@ -54,6 +54,8 @@ public final class SocketClient {
         this.connectionBackendThread = new ConnectionBackendThread(this);
     }
 
+
+    public String getClientName() { return clientName; }
 
     public String getHost(){ return host; }
     public int getPort() { return port; }
@@ -127,7 +129,7 @@ public final class SocketClient {
         shutdown = true;
         synchronized (this) {
             if (isConnected()) {
-                try { send(new DisconnectPacket()); } catch (Exception ignored) {}
+                try { send(getDisconnectPacket()); } catch (Exception ignored) {}
             }
         }
         closeConnection();
@@ -150,5 +152,13 @@ public final class SocketClient {
 
     BufferedReader getReader() { return reader; }
     boolean isShutdown() { return shutdown; }
+
+    private PacketData getDisconnectPacket() {
+
+        return Packets.create()
+                .setPost("disconnect")
+                .createBody(body -> body.addProperty("time", System.currentTimeMillis()))
+                .build();
+    }
 }
 

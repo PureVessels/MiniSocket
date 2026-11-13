@@ -8,7 +8,6 @@ import mini.service.socket.backend.SocketBackend;
 import mini.service.socket.client.SocketClient;
 import mini.service.socket.database.BanListDB;
 import mini.service.socket.database.WhiteListDB;
-import mini.service.socket.packet.PacketHandler;
 import mini.service.socket.utils.socket.SocketThread;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.net.ServerSocket;
 import java.security.MessageDigest;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +33,7 @@ public final class MiniSocket {
 
     private static final Logger logger = Logger.getLogger(MiniSocket.class.getName());
 
-    private final Map<String, PacketHandler> handlers = new ConcurrentHashMap<>();
+    private final RegisterHandlers handlers;
 
     private final Set<String> whiteList = ConcurrentHashMap.newKeySet();
     private final Set<String> banList = ConcurrentHashMap.newKeySet();
@@ -93,6 +92,7 @@ public final class MiniSocket {
         }
 
         this.hasDatabase = this.database != null;
+        this.handlers = new RegisterHandlers(this);
     }
 
     public MiniSocket(@NotNull MainBackend backend, String token){
@@ -116,6 +116,7 @@ public final class MiniSocket {
         this.backendSocket = false;
 
         instance = this;
+        this.handlers = new RegisterHandlers(this);
     }
 
     public MiniSocket(@NotNull String clientName, @NotNull String ip, int port, @NotNull String token){
@@ -231,34 +232,8 @@ public final class MiniSocket {
         });
     }
 
-    public void registerPacketHandler(PacketHandler handler, String token) {
-        Objects.requireNonNull(handler, "handler");
-
-        if (!tokenValid(token)) {
-            getLogger().warning("Packet handler rejected (invalid token): " + handler.post());
-            return;
-        }
-
-        if (handlers.putIfAbsent(handler.post(), handler) != null) {
-            getLogger().warning("Packet handler already registered: " + handler.post());
-        }
-    }
-
-    public void unregisterPacketHandler(PacketHandler handler, String token){
-        Objects.requireNonNull(handler, "handler");
-        String post = handler.post();
-
-        if (!tokenValid(token)) {
-            getLogger().warning("Packet handler unregister rejected (invalid token): " + post);
-            return;
-        }
-
-        if (handlers.remove(post) == null) {
-            getLogger().warning("Packet handler not registered: " + post);
-        }
-    }
-
-    public @Nullable PacketHandler getPacketHandler(String post){ return handlers.get(post); }
+    public RegisterHandlers getHandlers() { return handlers; }
+    public List<RegisteredListener> getPacketHandlers(String post) { return handlers.getHandlers(post); }
 
     public boolean hasDatabase(){ return hasDatabase; }
     public @Nullable DatabaseService getDatabase() {
@@ -284,7 +259,7 @@ public final class MiniSocket {
         BanListDB.createTable();
     }
 
-    private boolean tokenValid(String token) {
+    boolean tokenValid(String token) {
         if (token == null) return false;
         return MessageDigest.isEqual(token.getBytes(UTF_8), this.token.getBytes(UTF_8));
     }

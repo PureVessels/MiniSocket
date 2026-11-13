@@ -1,6 +1,7 @@
 package mini.service.socket.client;
 
-import mini.service.socket.packet.connection.HeartbeatPacket;
+import mini.service.socket.packet.PacketData;
+import mini.service.socket.utils.packet.Packets;
 
 public final class HeartbeatThread extends Thread {
 
@@ -23,11 +24,18 @@ public final class HeartbeatThread extends Thread {
                     break;
                 }
 
-                client.send(new HeartbeatPacket());
+                client.send(getHeartbeat());
                 Thread.sleep(INTERVAL_MS);
             } catch (IllegalStateException | InterruptedException e) {
                 break;
             }
         }
+    }
+
+    private PacketData getHeartbeat() {
+        return Packets.create()
+                .setPost("heartbeat")
+                .createBody(body -> body.addProperty("time", System.currentTimeMillis()))
+                .build();
     }
 }

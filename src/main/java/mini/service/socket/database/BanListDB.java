@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public final class BanListDB extends DatabaseManager {
 
@@ -45,5 +46,10 @@ public final class BanListDB extends DatabaseManager {
                             PRIMARY KEY (ip)
                         )
                         """);
+    }
+
+    @Override
+    public void exists(Consumer<Boolean> consumer) {
+
     }
 }
