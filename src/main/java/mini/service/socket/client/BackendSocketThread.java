@@ -10,6 +10,7 @@ import mini.service.socket.thrown.packet.PacketException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
 
 public final class BackendSocketThread extends Thread {
 
@@ -31,7 +32,7 @@ public final class BackendSocketThread extends Thread {
 
                 JsonObject json = MiniSocket.getGson().fromJson(line, JsonObject.class);
 
-                if (!json.has("packet")) {
+                if (json == null || !json.has("packet")) {
                     throw new PacketException("Missing required fields.", PacketException.Function.CONTROL);
                 }
 
@@ -41,18 +42,20 @@ public final class BackendSocketThread extends Thread {
                     PacketData packet = PacketData.load(jsonPacket);
                     List<RegisteredListener> handler = MiniSocket.getInstance().getPacketHandlers(packet.post());
 
-                    if (!handler.isEmpty()) {
-                        for (RegisteredListener listener : handler) {
-                            if (!listener.reader().isClientReader()) {
-                                MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
-                                continue;
-                            }
+                    for (RegisteredListener listener : handler) {
+                        if (!listener.reader().isClientReader()) {
+                            MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
+                            continue;
+                        }
 
+                        try {
                             listener.execute(packet.body());
+                        } catch (PacketException e) {
+                            MiniSocket.getLogger().log(Level.SEVERE, e.getMessage(), e.getCause());
                         }
                     }
 
-                } catch (JsonSyntaxException e) {
+                } catch (RuntimeException e) {
                     MiniSocket.getLogger().warning("Invalid packet received: " + line);
                 }
             }

@@ -19,6 +19,7 @@ import java.net.SocketTimeoutException;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -78,11 +79,10 @@ public final class ClientSocketThread extends Thread {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             while ((line = reader.readLine()) != null) {
-
                 try {
                     JsonObject json = MiniSocket.getGson().fromJson(line, JsonObject.class);
 
-                    if (!json.has("token") || !json.has("client") || !json.has("packet")) {
+                    if (json == null || !json.has("token") || !json.has("client") || !json.has("packet")) {
                         throw new PacketException("Missing required fields.", PacketException.Function.CONTROL);
                     }
 
@@ -115,26 +115,28 @@ public final class ClientSocketThread extends Thread {
 
                     List<RegisteredListener> listeners = MiniSocket.getInstance().getPacketHandlers(packet.post());
 
-                    if (!listeners.isEmpty()) {
-                        for (RegisteredListener listener : listeners) {
-                            if (!listener.reader().isBackendReader()){
-                                MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
-                                continue;
-                            }
+                    for (RegisteredListener listener : listeners) {
+                        if (!listener.reader().isBackendReader()){
+                            MiniSocket.getLogger().warning(packet.post() + " this packet not read!");
+                            continue;
+                        }
 
-                            if (listener.ignoreClient(serverName)) continue;
+                        if (listener.ignoreClient(serverName)) continue;
 
-                            JsonObject packetBody = packet.body();
+                        JsonObject packetBody = packet.body();
 
+                        try {
                             if (listener.listener().requireSocket()){
                                 listener.execute(packetBody, socket);
                             } else {
                                 listener.execute(packetBody);
                             }
+                        } catch (PacketException e) {
+                            MiniSocket.getLogger().log(Level.SEVERE, e.getMessage(), e.getCause());
                         }
                     }
-                } catch (JsonSyntaxException e) {
-                    throw new PacketException("Invalid packet received: " + line, PacketException.Function.CONTROL);
+                } catch (RuntimeException e) {
+                    MiniSocket.getLogger().log(Level.WARNING, "Invalid packet from " + remoteAddress + ": " + line, e);
                 }
             }
 

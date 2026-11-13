@@ -5,6 +5,7 @@ import mini.service.socket.client.SocketClient;
 import mini.service.socket.packet.handler.PacketHandler;
 import mini.service.socket.packet.handler.PacketListener;
 import mini.service.socket.packet.handler.PacketPriority;
+import mini.service.socket.thrown.packet.PacketException;
 import mini.service.socket.utils.packet.PacketReader;
 
 import java.net.Socket;
@@ -52,7 +53,7 @@ public final class RegisteredListener {
         try {
             action.accept(listener);
         } catch (Exception e) {
-            MiniSocket.getLogger().log(Level.SEVERE, "Packet listener failed: " + post, e);
+            throw new PacketException("Packet listener failed: " + post, PacketException.Function.EXECUTE, e);
         }
     }
 }
